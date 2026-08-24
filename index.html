@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="名片庫">
+<title>名片庫</title>
+<style>
+  :root{
+    --bg:#EEF0EE; --ink:#1A1D1F; --muted:#6B7280; --line:#D5D8D4;
+    --c-listed:#2F4B8F; --c-peer:#0E7A6F; --c-sales:#B07B1E; --c-press:#A84455; --c-other:#6B7280;
+    --font:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    --serif:"Songti TC","Noto Serif TC","PMingLiU",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px 100px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 10px}
+  h1{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:4px;margin:0}
+  .hbtns{display:flex;gap:14px;align-items:center}
+  .hbtn{background:none;border:none;font-size:18px;cursor:pointer;padding:2px;color:var(--ink);font-family:var(--font)}
+  .hbtn.text{font-size:14px;color:var(--c-listed)}
+  #syncBadge{font-size:12px;border-radius:999px;padding:3px 10px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--muted);font-family:var(--font)}
+  #syncBadge.ok{color:var(--c-peer);border-color:var(--c-peer)}
+  #syncBadge.err{color:var(--c-press);border-color:var(--c-press);font-weight:700}
+  #syncBadge.syncing{color:var(--c-sales);border-color:var(--c-sales)}
+  #toast{display:none;background:var(--ink);color:#fff;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:10px;position:sticky;top:6px;z-index:30}
+  input,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fff;font-family:var(--font);outline:none;color:var(--ink)}
+  input:focus,textarea:focus{border-color:var(--c-peer)}
+  label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block;letter-spacing:1px}
+  .field{margin-bottom:12px}
+  .btn{padding:12px 16px;border-radius:8px;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-green{background:var(--c-peer);color:#fff}
+  .btn-ghost{background:#fff;border:1px solid #C9CCC8;color:#4B5563}
+  .btn-full{width:100%}
+  .row{display:flex;gap:10px}
+  .row>*{flex:1}
+  .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .chips.wrap-ok{flex-wrap:wrap}
+  .chip{padding:6px 12px;border-radius:999px;font-size:13px;cursor:pointer;white-space:nowrap;border:1px solid #C9CCC8;background:#fff;color:#4B5563;font-family:var(--font)}
+  .chip.on{color:#fff;font-weight:600}
+  .sticky-top{position:sticky;top:0;background:var(--bg);padding:4px 0 8px;z-index:5}
+  .card{background:#fff;border-radius:10px;padding:14px 14px 12px 18px;margin-bottom:10px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+  .edge{position:absolute;left:0;top:0;bottom:0;width:5px}
+  .nm{font-size:17px;font-weight:700}
+  .nm-en{font-size:13px;color:var(--muted);margin-left:8px}
+  .ttl{font-size:13px;color:#4B5563;margin-top:1px}
+  .cat-tag{font-size:11px;border-radius:999px;padding:2px 8px;flex-shrink:0;border:1px solid}
+  .co{margin-top:6px;font-size:14px;font-weight:600;color:#1F2937}
+  .co .sep{font-weight:400;color:var(--muted)}
+  .co .en2{font-weight:400;color:var(--muted)}
+  .contact{margin-top:6px;font-size:13px;color:#4B5563;line-height:1.7}
+  .contact a{color:var(--c-listed);text-decoration:none}
+  .acts{display:flex;gap:14px;margin-top:8px}
+  .lnk{background:none;border:none;cursor:pointer;padding:0;font-size:13px;font-family:var(--font)}
+  .fab{position:fixed;right:20px;bottom:24px;width:58px;height:58px;border-radius:50%;background:var(--ink);color:#fff;font-size:30px;border:none;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;line-height:1;z-index:10}
+  .photo-slot{width:100%;height:96px;border-radius:10px;border:1.5px dashed #B7BBB6;background:#fff;cursor:pointer;font-size:14px;color:var(--muted);font-family:var(--font)}
+  .photo-slot.ok{background:#E7F0EA;color:var(--c-peer);border-style:solid}
+  .empty{text-align:center;margin-top:60px;color:var(--muted)}
+  .empty .big{font-size:40px;margin:0}
+  h3{font-size:16px;margin:18px 0 8px}
+  h3:first-child{margin-top:6px}
+  .note{font-size:13px;color:var(--muted);margin-top:0;line-height:1.7}
+  .hidden{display:none}
+  code{background:#E3E5E2;padding:1px 5px;border-radius:4px;font-size:12px}
+  .setup-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>名 片 庫</h1>
+    <div class="hbtns">
+      <button id="syncBadge" onclick="manualSync()" title="點擊立即同步">…</button>
+      <button class="hbtn text hidden" id="backBtn" onclick="go('list')">列表</button>
+      <button class="hbtn" onclick="go('io')" aria-label="匯出匯入">⇅</button>
+      <button class="hbtn" onclick="go('settings')" aria-label="設定">⚙</button>
+    </div>
+  </header>
+
+  <div id="toast"></div>
+
+  <!-- ============ 列表 ============ -->
+  <div id="view-list">
+    <div class="sticky-top">
+      <input id="searchBox" placeholder="搜尋公司、姓名（中英文皆可）、電話、email…" oninput="renderList()">
+      <div class="chips" id="catChips" style="padding-top:10px"></div>
+    </div>
+    <div id="cardList"></div>
+    <button class="fab" onclick="startAdd()" aria-label="新增名片">＋</button>
+  </div>
+
+  <!-- ============ 新增 / 編輯 ============ -->
+  <div id="view-add" class="hidden">
+    <div id="photoSection">
+      <div class="row" style="margin-bottom:10px">
+        <button class="photo-slot" id="slotFront" onclick="pickPhoto('front')">📷 正面</button>
+        <button class="photo-slot" id="slotBack" onclick="pickPhoto('back')">📷 背面（選填）</button>
+      </div>
+      <input type="file" accept="image/*" id="fileFront" class="hidden" onchange="onPhoto(event,'front')">
+      <input type="file" accept="image/*" id="fileBack" class="hidden" onchange="onPhoto(event,'back')">
+      <button class="btn btn-dark btn-full" id="recogBtn" style="margin-bottom:6px" onclick="doRecognize()">🔍 AI 辨識名片</button>
+      <p class="note" id="recogHint" style="margin-bottom:16px"></p>
+    </div>
+
+    <div id="formFields"></div>
+
+    <div class="field">
+      <label>分類</label>
+      <div class="chips wrap-ok" id="formCatChips"></div>
+    </div>
+    <div class="field">
+      <label>備註（認識場合、負責範圍等）</label>
+      <textarea id="f_notes" style="min-height:60px;resize:vertical"></textarea>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn btn-ghost" onclick="cancelAdd()">取消</button>
+      <button class="btn btn-green" style="flex:2" id="saveBtn" onclick="saveCard()">儲存</button>
+    </div>
+  </div>
+
+  <!-- ============ 匯出 / 匯入 ============ -->
+  <div id="view-io" class="hidden">
+    <h3>匯出備份</h3>
+    <p class="note">資料主檔在你的 GitHub repo（cards.json），匯出功能用於額外備份或給 Excel 使用。</p>
+    <div class="row" style="margin-bottom:24px">
+      <button class="btn btn-dark" onclick="exportJSON()">匯出 JSON</button>
+      <button class="btn btn-ghost" onclick="exportCSV()">匯出 CSV</button>
+    </div>
+    <h3>批次匯入</h3>
+    <p class="note">支援 JSON 陣列。大量建檔：在 Claude 對話中分批上傳名片照片，請 Claude 整理成以下欄位的 JSON 後匯入：<code>nameZh, nameEn, companyZh, companyEn, title, officePhone, ext, mobile, email, address, category, notes</code>（category：上市公司／同業／業務／記者／其他）</p>
+    <input type="file" accept=".json,application/json" id="importFile" class="hidden" onchange="onImportFile(event)">
+    <button class="btn btn-ghost btn-full" style="margin-bottom:10px" onclick="document.getElementById('importFile').click()">選擇 JSON 檔案</button>
+    <textarea id="importText" style="min-height:120px;resize:vertical;font-size:13px" placeholder='或直接貼上 JSON：[{"nameZh":"王小明","companyZh":"台積電",...}]'></textarea>
+    <button class="btn btn-green btn-full" style="margin-top:10px" onclick="doImport(document.getElementById('importText').value)">匯入貼上的內容</button>
+  </div>
+
+  <!-- ============ 設定 ============ -->
+  <div id="view-settings" class="hidden">
+    <h3>① 雲端資料儲存（GitHub）</h3>
+    <div class="setup-box">
+      <p class="note">名片文字資料存在你自己的 GitHub <b>private repo</b>，任何裝置登入設定後都能同步。首次設定：<br>
+      1. GitHub 建一個 private repo（例如 <code>card-data</code>，跟放這個網頁的 repo 分開）<br>
+      2. GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate new token<br>
+      3. Repository access 只勾選 <code>card-data</code>；Permissions → Contents → <b>Read and write</b><br>
+      4. 把 token 貼到下方。每支裝置設定一次即可。</p>
+    </div>
+    <div class="field">
+      <label>GitHub Token</label>
+      <input id="ghTokenInput" type="password" placeholder="github_pat_..." autocomplete="off">
+    </div>
+    <div class="field">
+      <label>資料 Repo（帳號/repo名稱）</label>
+      <input id="ghRepoInput" placeholder="例如 irene-tw/card-data" autocomplete="off">
+    </div>
+
+    <h3>② AI 辨識（Anthropic）</h3>
+    <p class="note">填入 API key 後可拍照直接辨識；「⇅」的 JSON 匯入永遠可用，兩種方式並存自由選。key 到 console.anthropic.com 申請。</p>
+    <div class="field">
+      <label>Anthropic API Key（選填）</label>
+      <input id="apiKeyInput" type="password" placeholder="sk-ant-..." autocomplete="off">
+    </div>
+    <div class="field">
+      <label>辨識模型</label>
+      <input id="modelInput" placeholder="claude-sonnet-4-6">
+      <p class="note" style="margin-top:4px">預設 claude-sonnet-4-6（準確）。想省成本可改 claude-haiku-4-5-20251001。</p>
+    </div>
+    <p class="note">兩組憑證都只儲存在此裝置的瀏覽器內，不會出現在網頁程式碼或傳給第三方；名片資料只往你的 GitHub repo 傳。</p>
+    <button class="btn btn-green btn-full" onclick="saveSettings()">儲存設定並連線</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:10px" onclick="clearCreds()">清除此裝置上的憑證</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ---------- 常數 ----------
+const CATEGORIES = ["上市公司","同業","業務","記者","其他"];
+const CAT_HEX = {"上市公司":"#2F4B8F","同業":"#0E7A6F","業務":"#B07B1E","記者":"#A84455","其他":"#6B7280"};
+const LS_CARDS="cardlib-cards-v1", LS_KEY="cardlib-apikey", LS_MODEL="cardlib-model";
+const LS_GHTOKEN="cardlib-gh-token", LS_GHREPO="cardlib-gh-repo";
+const DATA_PATH="cards.json";
+const FIELDS = [
+  ["nameZh","中文姓名"],["nameEn","英文姓名"],
+  ["companyZh","公司中文名稱"],["companyEn","公司英文名稱"],
+  ["title","職稱"],
+  ["officePhone","辦公室電話"],["ext","分機"],["mobile","手機"],
+  ["email","Email"],["address","地址（中文優先；外國公司用英文）"]
+];
+const ALL_KEYS = FIELDS.map(f=>f[0]).concat(["category","notes"]);
+
+// ---------- 狀態 ----------
+let cards=[], catFilter="全部", editingId=null, formCategory="其他";
+let imgFront=null, imgBack=null;
+let ghSha=null, syncing=false, pendingSync=false;
+
+// ---------- 工具 ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+function toast(t,ms){ const el=$("toast"); el.textContent=t; el.style.display="block"; clearTimeout(toast._t); toast._t=setTimeout(()=>el.style.display="none",ms||2500); }
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function b64encode(str){ return btoa(String.fromCharCode(...new TextEncoder().encode(str))); }
+function b64decode(b64){ return new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g,"")), c=>c.charCodeAt(0))); }
+
+// ---------- 憑證 ----------
+const getGhToken=()=>localStorage.getItem(LS_GHTOKEN)||"";
+const getGhRepo =()=>localStorage.getItem(LS_GHREPO)||"";
+const getKey    =()=>localStorage.getItem(LS_KEY)||"";
+const getModel  =()=>localStorage.getItem(LS_MODEL)||"claude-sonnet-4-6";
+const ghReady   =()=>!!(getGhToken()&&getGhRepo());
+const ghUrl     =()=>`https://api.github.com/repos/${getGhRepo()}/contents/${DATA_PATH}`;
+const ghHeaders =()=>({ "Authorization":"Bearer "+getGhToken(), "Accept":"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28", "Content-Type":"application/json" });
+
+// ---------- 同步狀態顯示 ----------
+function setSync(state, extra){
+  const b=$("syncBadge");
+  b.className="";
+  if(state==="ok"){ b.classList.add("ok"); b.textContent="☁ 已同步"; }
+  else if(state==="syncing"){ b.classList.add("syncing"); b.textContent="☁ 同步中…"; }
+  else if(state==="err"){ b.classList.add("err"); b.textContent="⚠ 未同步（點我重試）"; }
+  else if(state==="local"){ b.textContent="⚙ 未設定雲端"; }
+  if(extra) b.title=extra;
+}
+
+// ---------- 雲端載入 / 儲存 ----------
+function cacheLocal(){ try{ localStorage.setItem(LS_CARDS, JSON.stringify(cards)); }catch(e){} }
+function loadLocalCache(){ try{ return JSON.parse(localStorage.getItem(LS_CARDS)||"[]"); }catch(e){ return []; } }
+
+async function cloudLoad(){
+  cards = loadLocalCache();
+  renderList();
+  if(!ghReady()){ setSync("local"); return; }
+  setSync("syncing");
+  try{
+    const r = await fetch(ghUrl(), {headers: ghHeaders()});
+    if(r.status===404){
+      ghSha=null;
+      if(cards.length>0){ await cloudSave(); } else { setSync("ok","repo 已連線，尚無資料檔"); }
+      return;
+    }
+    if(r.status===401||r.status===403) throw new Error("Token 無效或權限不足");
+    if(!r.ok) throw new Error("GitHub 回應 "+r.status);
+    const j = await r.json();
+    ghSha = j.sha;
+    const remote = JSON.parse(b64decode(j.content));
+    if(Array.isArray(remote)){
+      // 雲端為主；若本機快取有雲端沒有的 id（離線期間新增），合併後回寫
+      const remoteIds = new Set(remote.map(c=>c.id));
+      const localOnly = cards.filter(c=>!remoteIds.has(c.id));
+      cards = localOnly.concat(remote);
+      cacheLocal();
+      renderList();
+      if(localOnly.length>0){ toast(`合併 ${localOnly.length} 筆離線資料，回寫雲端`); await cloudSave(); }
+      else setSync("ok");
+    }
+  }catch(e){
+    setSync("err", e.message);
+    toast("雲端讀取失敗，暫用本機快取："+e.message, 4500);
+  }
+}
+
+async function cloudSave(){
+  cacheLocal();
+  if(!ghReady()){ setSync("local"); return; }
+  if(syncing){ pendingSync=true; return; }
+  syncing=true; setSync("syncing");
+  try{
+    const body = { message:"update cards "+new Date().toISOString(), content: b64encode(JSON.stringify(cards,null,1)) };
+    if(ghSha) body.sha = ghSha;
+    let r = await fetch(ghUrl(), {method:"PUT", headers:ghHeaders(), body:JSON.stringify(body)});
+    if(r.status===409||r.status===422){
+      const g = await fetch(ghUrl(), {headers:ghHeaders()});
+      if(g.ok){ const gj=await g.json(); body.sha=gj.sha; }
+      r = await fetch(ghUrl(), {method:"PUT", headers:ghHeaders(), body:JSON.stringify(body)});
+    }
+    if(!r.ok) throw new Error("GitHub 回應 "+r.status);
+    const j = await r.json();
+    ghSha = j.content.sha;
+    setSync("ok");
+  }catch(e){
+    setSync("err", e.message);
+    toast("⚠️ 雲端同步失敗，資料暫存本機。點上方「未同步」重試："+e.message, 5000);
+  }
+  syncing=false;
+  if(pendingSync){ pendingSync=false; cloudSave(); }
+}
+
+function manualSync(){
+  if(!ghReady()){ go("settings"); return; }
+  cloudLoad();
+}
+
+// ---------- 導覽 ----------
+function go(view){
+  ["list","add","io","settings"].forEach(v=>$("view-"+v).classList.toggle("hidden", v!==view));
+  $("backBtn").classList.toggle("hidden", view==="list");
+  if(view==="list") renderList();
+  if(view==="settings"){
+    $("ghTokenInput").value=getGhToken();
+    $("ghRepoInput").value=getGhRepo();
+    $("apiKeyInput").value=getKey();
+    $("modelInput").value=getModel();
+  }
+  window.scrollTo(0,0);
+}
+
+// ---------- 列表 ----------
+function counts(){ const m={}; CATEGORIES.forEach(c=>m[c]=0); cards.forEach(c=>{ if(m[c.category]!=null)m[c.category]++; }); return m; }
+function renderChips(){
+  const m=counts();
+  let html = `<button class="chip ${catFilter==="全部"?"on":""}" style="${catFilter==="全部"?"background:#1A1D1F;border-color:#1A1D1F":""}" onclick="setCat('全部')">全部 ${cards.length}</button>`;
+  CATEGORIES.forEach(cat=>{
+    const on=catFilter===cat;
+    html += `<button class="chip ${on?"on":""}" style="${on?`background:${CAT_HEX[cat]};border-color:${CAT_HEX[cat]}`:""}" onclick="setCat('${cat}')">${cat} ${m[cat]}</button>`;
+  });
+  $("catChips").innerHTML=html;
+}
+function setCat(c){ catFilter=c; renderList(); }
+function telHref(num,ext){ const n=String(num||"").replace(/[^+\d]/g,""); return "tel:"+n+(ext?","+String(ext).replace(/\D/g,""):""); }
+
+function renderList(){
+  renderChips();
+  const q=$("searchBox").value.trim().toLowerCase();
+  const list=cards.filter(c=>{
+    if(catFilter!=="全部" && c.category!==catFilter) return false;
+    if(!q) return true;
+    return ["nameZh","nameEn","companyZh","companyEn","title","email","officePhone","mobile","address","notes"]
+      .some(k=>String(c[k]||"").toLowerCase().includes(q));
+  });
+  if(cards.length===0){
+    $("cardList").innerHTML=`<div class="empty"><p class="big">🗂️</p><p style="font-size:15px">還沒有名片。按右下角「＋」拍第一張，<br>或到「⇅」批次匯入 JSON。<br><br>首次使用請先到 ⚙ 完成雲端設定。</p></div>`;
+    return;
+  }
+  if(list.length===0){
+    $("cardList").innerHTML=`<p style="text-align:center;color:var(--muted);margin-top:40px">找不到符合「${esc(q)}」的名片</p>`;
+    return;
+  }
+  $("cardList").innerHTML=list.map(c=>{
+    const col=CAT_HEX[c.category]||"#6B7280";
+    let contact="";
+    if(c.officePhone) contact+=`<div>☎️ <a href="${telHref(c.officePhone,c.ext)}">${esc(c.officePhone)}${c.ext?`（分機 ${esc(c.ext)}）`:""}</a></div>`;
+    if(c.mobile) contact+=`<div>📱 <a href="${telHref(c.mobile)}">${esc(c.mobile)}</a></div>`;
+    if(c.email) contact+=`<div>✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>`;
+    if(c.address) contact+=`<div>📍 ${esc(c.address)}</div>`;
+    if(c.notes) contact+=`<div style="color:#92702A">📝 ${esc(c.notes)}</div>`;
+    return `<div class="card">
+      <div class="edge" style="background:${col}"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <span class="nm">${esc(c.nameZh||c.nameEn)}</span>${c.nameZh&&c.nameEn?`<span class="nm-en">${esc(c.nameEn)}</span>`:""}
+          ${c.title?`<div class="ttl">${esc(c.title)}</div>`:""}
+        </div>
+        <span class="cat-tag" style="color:${col};border-color:${col}">${esc(c.category)}</span>
+      </div>
+      <div class="co">${esc(c.companyZh)}${c.companyZh&&c.companyEn?`<span class="sep"> ｜ </span>`:""}${c.companyEn?`<span class="${c.companyZh?"en2":""}">${esc(c.companyEn)}</span>`:""}</div>
+      <div class="contact">${contact}</div>
+      <div class="acts">
+        <button class="lnk" style="color:#2F4B8F" onclick="startEdit('${c.id}')">編輯</button>
+        <button class="lnk" id="del-${c.id}" style="color:#9CA3AF" onclick="askDelete('${c.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function askDelete(id){
+  const btn=$("del-"+id); if(!btn) return;
+  if(btn.dataset.confirm){
+    cards=cards.filter(c=>c.id!==id);
+    cloudSave(); renderList(); toast("已刪除");
+  }else{
+    btn.dataset.confirm="1"; btn.textContent="確認刪除？"; btn.style.color="#A84455"; btn.style.fontWeight="700";
+    setTimeout(()=>{ const b=$("del-"+id); if(b){ delete b.dataset.confirm; b.textContent="刪除"; b.style.color="#9CA3AF"; b.style.fontWeight="400"; } },3000);
+  }
+}
+
+// ---------- 新增 / 編輯 ----------
+function buildForm(values){
+  $("formFields").innerHTML = FIELDS.map(([k,label])=>
+    `<div class="field"><label>${label}</label><input id="f_${k}" value="${esc(values[k]||"")}"></div>`
+  ).join("");
+  $("f_notes").value = values.notes||"";
+  formCategory = CATEGORIES.includes(values.category)?values.category:"其他";
+  renderFormCats();
+}
+function renderFormCats(){
+  $("formCatChips").innerHTML = CATEGORIES.map(cat=>{
+    const on=formCategory===cat;
+    return `<button class="chip ${on?"on":""}" style="${on?`background:${CAT_HEX[cat]};border-color:${CAT_HEX[cat]}`:""}" onclick="formCategory='${cat}';renderFormCats()">${cat}</button>`;
+  }).join("");
+}
+function startAdd(){
+  editingId=null; imgFront=null; imgBack=null;
+  $("photoSection").classList.remove("hidden");
+  updateSlots(); updateRecogHint();
+  buildForm({});
+  $("saveBtn").textContent="儲存";
+  go("add");
+}
+function startEdit(id){
+  const c=cards.find(x=>x.id===id); if(!c) return;
+  editingId=id; imgFront=null; imgBack=null;
+  $("photoSection").classList.add("hidden");
+  buildForm(c);
+  $("saveBtn").textContent="更新";
+  go("add");
+}
+function cancelAdd(){ editingId=null; go("list"); }
+function readForm(){
+  const o={};
+  FIELDS.forEach(([k])=>o[k]=$("f_"+k).value.trim());
+  o.notes=$("f_notes").value.trim();
+  o.category=formCategory;
+  return o;
+}
+function saveCard(){
+  const f=readForm();
+  if(!f.nameZh&&!f.nameEn&&!f.companyZh&&!f.companyEn){ toast("至少需要姓名或公司名稱"); return; }
+  if(editingId){ cards=cards.map(c=>c.id===editingId?{...c,...f}:c); toast("已更新"); }
+  else{ cards.unshift({id:newId(),createdAt:today(),...f}); toast("已儲存並同步，名片可以丟了 ✓"); }
+  cloudSave(); editingId=null; go("list");
+}
+
+// ---------- 拍照與辨識 ----------
+function pickPhoto(side){ $(side==="front"?"fileFront":"fileBack").click(); }
+function updateSlots(){
+  $("slotFront").textContent=imgFront?"✓ 正面已就緒（點擊重拍）":"📷 正面";
+  $("slotFront").classList.toggle("ok",!!imgFront);
+  $("slotBack").textContent=imgBack?"✓ 背面已就緒（點擊重拍）":"📷 背面（選填）";
+  $("slotBack").classList.toggle("ok",!!imgBack);
+}
+function updateRecogHint(){
+  if(getKey()){ $("recogBtn").disabled=false; $("recogHint").textContent=""; }
+  else{
+    $("recogBtn").disabled=true;
+    $("recogHint").textContent="尚未設定 Anthropic API key（⚙）。免 key 做法：名片照片傳到 Claude 對話整理成 JSON，再到「⇅」匯入；或直接手動填寫。";
+  }
+}
+function resizeToBase64(file,maxDim,quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height; const M=maxDim||1400;
+        if(Math.max(w,h)>M){ const s=M/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+        const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(cv.toDataURL("image/jpeg",quality||0.85).split(",")[1]);
+      };
+      img.onerror=()=>reject(new Error("圖片載入失敗"));
+      img.src=reader.result;
+    };
+    reader.onerror=()=>reject(new Error("檔案讀取失敗"));
+    reader.readAsDataURL(file);
+  });
+}
+async function onPhoto(e,side){
+  const file=e.target.files&&e.target.files[0]; if(!file) return;
+  try{
+    const b64=await resizeToBase64(file);
+    if(side==="front") imgFront=b64; else imgBack=b64;
+    updateSlots();
+  }catch(err){ toast("照片處理失敗："+err.message); }
+  e.target.value="";
+}
+
+const PROMPT=`這是同一張名片的照片（可能包含正反兩面，一面中文一面英文，請合併為同一個人的資料）。請辨識並只回傳 JSON，不要任何其他文字、不要 markdown 標記。格式：
+{"nameZh":"中文姓名","nameEn":"英文姓名","companyZh":"公司中文名稱","companyEn":"公司英文名稱","title":"職稱（中文優先）","officePhone":"辦公室電話（格式照名片原樣，不含分機）","ext":"分機號碼（只填數字，沒有則空字串）","mobile":"手機號碼","email":"電子郵件","address":"地址","category":"分類","notes":""}
+規則：
+1. 地址：名片上若有中文地址，只填中文地址；若是外國公司只有英文地址，才填英文地址。
+2. 電話：Tel/T/電話 是辦公室電話；ext/分機 填入 ext 欄位；Mobile/M/Cell/手機/行動 是手機。Fax 不用填。
+3. 找不到的欄位填空字串。
+4. category 從以下推測一個：上市公司（一般企業）、同業（投信/投顧/資產管理/證券自營）、業務（券商sales/銷售交易/法人業務/銀行理專）、記者（媒體）、其他。
+5. 只回傳 JSON。`;
+
+async function doRecognize(){
+  const imgs=[imgFront,imgBack].filter(Boolean);
+  if(imgs.length===0){ toast("請先拍攝或上傳名片照片"); return; }
+  const key=getKey();
+  if(!key){ toast("請先到 ⚙ 設定填入 API key"); return; }
+  $("recogBtn").disabled=true; $("recogBtn").textContent="AI 辨識中…";
+  try{
+    const content=imgs.map(b64=>({type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}}));
+    content.push({type:"text",text:PROMPT});
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-api-key":key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify({model:getModel(),max_tokens:1000,messages:[{role:"user",content}]})
+    });
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message||"API 錯誤");
+    const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
+    FIELDS.forEach(([k])=>{ if(parsed[k]!=null) $("f_"+k).value=String(parsed[k]); });
+    if(CATEGORIES.includes(parsed.category)){ formCategory=parsed.category; renderFormCats(); }
+    toast("辨識完成，請核對欄位");
+  }catch(err){ toast("辨識失敗："+(err.message||"請重試或手動輸入"),4500); }
+  $("recogBtn").disabled=false; $("recogBtn").textContent="🔍 AI 辨識名片";
+}
+
+// ---------- 匯出 / 匯入 ----------
+function download(filename,text,mime){
+  const blob=new Blob([text],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function exportJSON(){
+  const d=today().replace(/-/g,"");
+  download(`名片庫-${d}.json`, JSON.stringify(cards,null,2), "application/json");
+}
+function exportCSV(){
+  const cols=["nameZh","nameEn","companyZh","companyEn","title","officePhone","ext","mobile","email","address","category","notes","createdAt"];
+  const header=["中文姓名","英文姓名","公司中文","公司英文","職稱","辦公室電話","分機","手機","Email","地址","分類","備註","建立日期"];
+  const escCsv=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const rows=[header.join(",")].concat(cards.map(c=>cols.map(k=>escCsv(c[k])).join(",")));
+  const d=today().replace(/-/g,"");
+  download(`名片庫-${d}.csv`, "\uFEFF"+rows.join("\n"), "text/csv;charset=utf-8");
+}
+function doImport(text){
+  if(!text||!text.trim()){ toast("沒有內容可匯入"); return; }
+  try{
+    const arr=JSON.parse(text);
+    if(!Array.isArray(arr)) throw new Error("格式須為 JSON 陣列");
+    const existing=new Set(cards.map(c=>c.id));
+    const cleaned=arr.filter(c=>c&&typeof c==="object").map(c=>{
+      const o={id:(c.id&&!existing.has(c.id))?c.id:newId(), createdAt:c.createdAt||today()};
+      ALL_KEYS.forEach(k=>o[k]=String(c[k]==null?"":c[k]));
+      if(!o.officePhone&&c.phone) o.officePhone=String(c.phone);
+      if(!CATEGORIES.includes(o.category)) o.category="其他";
+      return o;
+    });
+    cards=cleaned.concat(cards);
+    cloudSave();
+    $("importText").value="";
+    toast(`已匯入 ${cleaned.length} 筆，同步雲端中`);
+    go("list");
+  }catch(err){ toast("匯入失敗："+err.message,4500); }
+}
+function onImportFile(e){
+  const file=e.target.files&&e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>doImport(reader.result);
+  reader.readAsText(file);
+  e.target.value="";
+}
+
+// ---------- 設定 ----------
+function saveSettings(){
+  const t=$("ghTokenInput").value.trim();
+  const r=$("ghRepoInput").value.trim().replace(/^https:\/\/github\.com\//,"").replace(/\/$/,"");
+  const k=$("apiKeyInput").value.trim();
+  const m=$("modelInput").value.trim()||"claude-sonnet-4-6";
+  if(t) localStorage.setItem(LS_GHTOKEN,t); 
+  if(r) localStorage.setItem(LS_GHREPO,r);
+  if(k) localStorage.setItem(LS_KEY,k);
+  localStorage.setItem(LS_MODEL,m);
+  toast("設定已儲存，連線中…");
+  go("list");
+  cloudLoad();
+}
+function clearCreds(){
+  [LS_GHTOKEN,LS_GHREPO,LS_KEY].forEach(k=>localStorage.removeItem(k));
+  $("ghTokenInput").value=""; $("ghRepoInput").value=""; $("apiKeyInput").value="";
+  setSync("local");
+  toast("已清除此裝置上的所有憑證");
+}
+
+// ---------- 啟動 ----------
+cloudLoad();
+</script>
+</body>
+</html>
