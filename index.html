@@ -87,7 +87,7 @@
   <!-- ============ 列表 ============ -->
   <div id="view-list">
     <div class="sticky-top">
-      <input id="searchBox" placeholder="搜尋公司、姓名（中英文皆可）、電話、email…" oninput="renderList()">
+      <input id="searchBox" placeholder="搜尋公司、姓名（中英文皆可）、電話、email…" oninput="listLimit=30;renderList()">
       <div class="chips" id="catChips" style="padding-top:10px"></div>
     </div>
     <div id="cardList"></div>
@@ -194,6 +194,7 @@ const ALL_KEYS = FIELDS.map(f=>f[0]).concat(["category","notes"]);
 
 // ---------- 狀態 ----------
 let cards=[], catFilter="全部", editingId=null, formCategory="其他";
+let listLimit=30;
 let imgFront=null, imgBack=null;
 let ghSha=null, syncing=false, pendingSync=false;
 
@@ -319,7 +320,7 @@ function renderChips(){
   });
   $("catChips").innerHTML=html;
 }
-function setCat(c){ catFilter=c; renderList(); }
+function setCat(c){ catFilter=c; listLimit=30; renderList(); }
 function telHref(num,ext){ const n=String(num||"").replace(/[^+\d]/g,""); return "tel:"+n+(ext?","+String(ext).replace(/\D/g,""):""); }
 
 // ---------- 重複偵測 ----------
@@ -364,7 +365,7 @@ function renderList(){
     $("cardList").innerHTML=`<p style="text-align:center;color:var(--muted);margin-top:40px">找不到符合「${esc(q)}」的名片</p>`;
     return;
   }
-  $("cardList").innerHTML=list.map(c=>{
+  $("cardList").innerHTML=list.slice(0,listLimit).map(c=>{
     const col=CAT_HEX[c.category]||"#6B7280";
     let contact="";
     if(c.officePhone) contact+=`<div>☎️ <a href="${telHref(c.officePhone,c.ext)}">${esc(c.officePhone)}${c.ext?`（分機 ${esc(c.ext)}）`:""}</a></div>`;
@@ -389,6 +390,9 @@ function renderList(){
       </div>
     </div>`;
   }).join("");
+  if(list.length>listLimit){
+    $("cardList").innerHTML += `<button class="btn btn-ghost btn-full" style="margin-top:4px" onclick="listLimit+=50;renderList()">顯示更多（還有 ${list.length-listLimit} 筆）</button>`;
+  }
 }
 
 function askDelete(id){
