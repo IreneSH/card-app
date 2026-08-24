@@ -322,6 +322,31 @@ function renderChips(){
 function setCat(c){ catFilter=c; renderList(); }
 function telHref(num,ext){ const n=String(num||"").replace(/[^+\d]/g,""); return "tel:"+n+(ext?","+String(ext).replace(/\D/g,""):""); }
 
+// ---------- 重複偵測 ----------
+function phoneDigits(p){ return String(p||"").replace(/\D/g,""); }
+function phoneMatch(a,b){
+  const x=phoneDigits(a), y=phoneDigits(b);
+  if(x.length<7||y.length<7) return false;
+  return x.endsWith(y)||y.endsWith(x);
+}
+function dupOf(c, excludeId, pool){
+  const list = pool||cards;
+  const em=(c.email||"").trim().toLowerCase();
+  const nk=((c.nameZh||c.nameEn)||"").trim().toLowerCase();
+  for(const x of list){
+    if(excludeId && x.id===excludeId) continue;
+    if(em && (x.email||"").trim().toLowerCase()===em) return x;
+    if(c.mobile && x.mobile && phoneMatch(c.mobile,x.mobile)) return x;
+    const xk=((x.nameZh||x.nameEn)||"").trim().toLowerCase();
+    if(nk && xk===nk){
+      const coMatch=(c.companyZh&&x.companyZh&&c.companyZh.trim()===x.companyZh.trim())
+        ||(c.companyEn&&x.companyEn&&c.companyEn.trim().toLowerCase()===x.companyEn.trim().toLowerCase());
+      if(coMatch) return x;
+    }
+  }
+  return null;
+}
+
 function renderList(){
   renderChips();
   const q=$("searchBox").value.trim().toLowerCase();
@@ -419,6 +444,10 @@ function readForm(){
 function saveCard(){
   const f=readForm();
   if(!f.nameZh&&!f.nameEn&&!f.companyZh&&!f.companyEn){ toast("至少需要姓名或公司名稱"); return; }
+  if(!editingId){
+    const d=dupOf(f,null);
+    if(d && !window.confirm(`⚠️ 可能重複：系統已有「${(d.nameZh||d.nameEn)}｜${(d.companyZh||d.companyEn)}」（依 email／手機／姓名+公司比對）。\n\n仍要新增一筆嗎？`)) return;
+  }
   if(editingId){ cards=cards.map(c=>c.id===editingId?{...c,...f}:c); toast("已更新"); }
   else{ cards.unshift({id:newId(),createdAt:today(),...f}); toast("已儲存並同步，名片可以丟了 ✓"); }
   cloudSave(); editingId=null; go("list");
@@ -540,10 +569,16 @@ function doImport(text){
       if(!CATEGORIES.includes(o.category)) o.category="其他";
       return o;
     });
-    cards=cleaned.concat(cards);
+    const accepted=[], skipped=[];
+    for(const c of cleaned){
+      if(dupOf(c,null,cards.concat(accepted))) skipped.push(c.nameZh||c.nameEn||"(無名)");
+      else accepted.push(c);
+    }
+    cards=accepted.concat(cards);
     cloudSave();
     $("importText").value="";
-    toast(`已匯入 ${cleaned.length} 筆，同步雲端中`);
+    if(skipped.length>0) toast(`已匯入 ${accepted.length} 筆；跳過 ${skipped.length} 筆重複：${skipped.join("、")}`, 6000);
+    else toast(`已匯入 ${accepted.length} 筆，同步雲端中`);
     go("list");
   }catch(err){ toast("匯入失敗："+err.message,4500); }
 }
