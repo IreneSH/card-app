@@ -132,7 +132,7 @@
       <button class="btn btn-ghost" onclick="exportCSV()">匯出 CSV</button>
     </div>
     <h3>批次匯入</h3>
-    <p class="note">支援 JSON 陣列。大量建檔：在 Claude 對話中分批上傳名片照片，請 Claude 整理成以下欄位的 JSON 後匯入：<code>nameZh, nameEn, companyZh, companyEn, title, officePhone, ext, mobile, email, address, category, notes</code>（category：上市公司／同業／業務／記者／其他）</p>
+    <p class="note">支援 JSON 陣列。大量建檔：在 Claude 對話中分批上傳名片照片，請 Claude 整理成以下欄位的 JSON 後匯入：<code>nameZh, nameEn, companyZh, companyEn, title, officePhone, ext, mobile, email, address, category, notes</code>（category：上市公司／同業／業務／記者／分析師／其他）</p>
     <input type="file" accept=".json,application/json" id="importFile" class="hidden" onchange="onImportFile(event)">
     <button class="btn btn-ghost btn-full" style="margin-bottom:10px" onclick="document.getElementById('importFile').click()">選擇 JSON 檔案</button>
     <textarea id="importText" style="min-height:120px;resize:vertical;font-size:13px" placeholder='或直接貼上 JSON：[{"nameZh":"王小明","companyZh":"台積電",...}]'></textarea>
@@ -178,8 +178,8 @@
 <script>
 "use strict";
 // ---------- 常數 ----------
-const CATEGORIES = ["上市公司","同業","業務","記者","其他"];
-const CAT_HEX = {"上市公司":"#2F4B8F","同業":"#0E7A6F","業務":"#B07B1E","記者":"#A84455","其他":"#6B7280"};
+const CATEGORIES = ["上市公司","同業","業務","記者","分析師","其他"];
+const CAT_HEX = {"上市公司":"#2F4B8F","同業":"#0E7A6F","業務":"#B07B1E","記者":"#A84455","分析師":"#6B4FA0","其他":"#6B7280"};
 const LS_CARDS="cardlib-cards-v1", LS_KEY="cardlib-apikey", LS_MODEL="cardlib-model";
 const LS_GHTOKEN="cardlib-gh-token", LS_GHREPO="cardlib-gh-repo";
 const DATA_PATH="cards.json";
@@ -507,7 +507,7 @@ const PROMPT=`這是同一張名片的照片（可能包含正反兩面，一面
 1. 地址：名片上若有中文地址，只填中文地址；若是外國公司只有英文地址，才填英文地址。
 2. 電話：Tel/T/電話 是辦公室電話；ext/分機 填入 ext 欄位；Mobile/M/Cell/手機/行動 是手機。Fax 不用填。
 3. 找不到的欄位填空字串。
-4. category 從以下推測一個：上市公司（一般企業）、同業（投信/投顧/資產管理/證券自營）、業務（券商sales/銷售交易/法人業務/銀行理專）、記者（媒體）、其他。
+4. category 從以下推測一個：上市公司（一般企業）、同業（投信/投顧/資產管理/證券自營）、業務（券商sales/銷售交易/法人業務/銀行理專）、記者（媒體）、分析師（券商/sell-side 研究部門，職稱含 Research/Analyst/研究員）、其他。
 5. 只回傳 JSON。`;
 
 async function doRecognize(){
